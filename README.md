@@ -88,16 +88,33 @@ Inject intentional syntax error for SRE agent testing.
 
 Asegúrate de que el campo "Target branch" diga **_main_**. Haz clic en el botón verde inferior "Commit changes".
 
-**Paso 2:** Crear el Archivo de Pipeline (.gitlab-ci.yml)Para que GitLab intente compilar tu script de Python, ejecute el linter y genere el pipeline en estado failed real que exige el Check 8 de tu especificación (retomar_pr... p. 2), debemos crear el manifiesto de CI/CD:Regresa a la raíz de tu proyecto demo-sre-test haciendo clic en su nombre en la esquina superior izquierda.Haz clic nuevamente en el botón "+" y selecciona "New file".En el campo "File name", escribe exactamente: .gitlab-ci.yml (asegúrate de incluir el punto al inicio).Copia y pega esta configuración de pipeline estándar de Python:yamlstages:
+**Paso 2:** Crear el Archivo de Pipeline (.gitlab-ci.yml)
 
-* test
+Para que GitLab intente compilar el script de Python, ejecutando el linter y genere el pipeline en estado failed real que exige el Check de la ejecución, debes crear el manifiesto de CI/CD.
 
-linter_job:
+Entonces, en Gitlab, ve a la raíz de tu proyecto "demo-sre-test" haciendo clic en su nombre en la esquina superior izquierda. Haz clic, nuevamente, en el botón "+" y selecciona "New file". En el campo "File name", escribe: ".gitlab-ci.yml" (asegúrate de incluir el punto al inicio). Luego, copia y pega esta configuración de pipeline estándar:
+
+'''yml
+  linter_job:
   stage: test
   image: python:3.11-slim
   script:
-    - python app.py
-Use code with caution.En "Commit message", escribe: ci: add automation pipeline configHaz clic en el botón verde "Commit changes".Paso 3: Sincronizar el Nuevo ID del ProyectoAl crear este nuevo proyecto, GitLab le asignó un número de identificación único a nivel mundial.En la barra lateral izquierda de tu proyecto demo-sre-test, haz clic en "Project overview" (o en el nombre principal del proyecto).Justo debajo del título del repositorio, verás una etiqueta pequeña que dice: "Project ID: XXXXXXXX" (un número de 8 dígitos).Copia ese número exacto.Abre tu archivo .env en la raíz de tu máquina y actualiza la variable:envGITLAB_PROJECT_ID="TU_NUEVO_NUMERO_DE_ID"
-Use code with caution.Abre tu archivo config/repo_config.json y actualiza la llave plana sin alterar su estructura original para mantener la compatibilidad:json"project_id": "TU_NUEVO_NUMERO_DE_ID",
-Use code with caution.Paso 4: Ejecución de la Verificación Real de Extremo a ExtremoUna vez que GitLab intente ejecutar el pipeline (tomará unos segundos y se pondrá en color rojo indicando failed debido al error de sintaxis de la cadena sin cerrar), ejecuta el Launcher desde tu consola de Windows:bashpython run_agent.py --mode demo
-Use code with caution.El Comportamiento que Verás:El asistente DemoRuntime abrirá el canal TCP asíncrono (retomar_pr... p. 1).Validará que el token posee los scopes correctos.Verificará la identidad: demo-sre-test == demo-sre-test (¡Check aprobado!).Escaneará que existe app.py y contiene la firma rota (retomar_pr... p. 2).Capturará el ID del pipeline real fallido desde los servidores de GitLab Cloud (retomar_pr... p. 1).El LogAnalyzer determinístico tomará el control, desplegará el reporte visual completo en pantalla con la métrica explicativa AUTO_FIX, ejecutará los agentes y guardará el respaldo inmutable de auditoría en config/reports/demo_report.json (retomar_pr... p. 2).Por favor, crea el archivo en la interfaz de GitLab, actualiza el ID en tu entorno y ejecútalo. Quedo atento a la traza definitiva de éxito extremo a extremo para cerrar este gran hito.
+    - python app.py'''
+
+En "Commit message", puedes escribir: "Add automation pipeline config". Haz clic en el botón "Commit changes".
+
+**Paso 3:** Sincronizar el Nuevo ID del Proyecto
+
+Al crear este nuevo proyecto, GitLab le asigna un número de identificación único a nivel mundial. En la barra lateral izquierda de tu proyecto "demo-sre-test", haz clic en en el nombre principal del proyecto. Justo debajo del título del repositorio, verás una etiqueta pequeña que dice: "Project ID: XXXXXXXX" (un número de 8 dígitos). Copia ese número exacto. Abre tu archivo ".env" en la raíz de tu máquina y actualiza la variable: GITLAB_PROJECT_ID="TU_NUEVO_NUMERO_DE_ID"
+
+Abre tu archivo "config/repo_config.json" y actualiza la llave, sin alterar su estructura original para mantener la compatibilidad: "project_id": "TU_NUEVO_NUMERO_DE_ID",
+
+**Paso 4:** Ejecución de la Verificación Real de Extremo a Extremo
+
+Una vez que GitLab intente ejecutar el pipeline (tomará unos segundos y se pondrá en color rojo indicando failed debido al error de sintaxis de la cadena sin cerrar), luego ejecuta el Launcher desde tu consola de Windows: "run_agent.py --mode demo"
+
+El Comportamiento que deberías ver: El asistente DemoRuntime abrirá el canal TCP asíncrono. Validará que el token posee los scopes correctos. Verificará la identidad: demo-sre-test == demo-sre-test (¡Check aprobado!). Escaneará que existe app.py y que contiene la firma rota. Capturará el ID del pipeline real fallido desde los servidores de GitLab Cloud. La clase LogAnalyzer, determinística, dentro del agente triage, tomará el control, desplegará el reporte visual completo en pantalla con la métrica explicativa AUTO_FIX, ejecutará los agentes subsecuentes del flujo cognitivo y guardará el respaldo inmutable de auditoría en config/reports/demo_report.json estampando el hash de idempotencia. 
+
+Síntesis, crea el archivo en la interfaz de GitLab, actualiza el ID en tu entorno y ejecútalo el comando con el modificador '--demo'.
+
+En progreso...modo 'REPO' que es el SRE agnóstico para resolver problemas de flujos CI/CD en forma automática con supervisión HITL para revisar los pipelines corregidos y aprobar, rechazar o completar otras tareas que falten (por ejemplo, actualizar una versión incompatible)
