@@ -1,0 +1,8 @@
+{
+  "pipeline_id": "992",
+  "project_id": "mcp-git-sre",
+  "branch": "feature/analytics",
+  "failed_job_name": "install_dependencies",
+  "error_log_snippet": "ModuleNotFoundError: No module named 'httpx' in report_generator.py",
+  "error_type": "TEST_FAILURE"
+}

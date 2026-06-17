@@ -1,0 +1,14 @@
+{
+  "repo_name": "demo-sre-test",
+  "gitlab_url": "https://gitlab.com",
+  "private_token": "env_masked",
+  "project_id": "83392305",
+  "source_branch": "fix/automated-sre-patch",
+  "target_branch": "main",
+  "demo": {
+    "expected_repo_name": "demo-sre-test",
+    "expected_branch": "main",
+    "expected_file": "app.py",
+    "expected_error": "SyntaxError"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "pipeline_id": "991",
+  "project_id": "mcp-git-sre",
+  "branch": "bugfix/parser",
+  "failed_job_name": "linter_checks",
+  "error_log_snippet": "SyntaxError: invalid syntax (auth.py, line 42) -> def login(user) print(user)",
+  "error_type": "SYNTAX"
+}

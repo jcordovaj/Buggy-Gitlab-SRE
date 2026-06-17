@@ -1,0 +1,8 @@
+{
+  "pipeline_id": "994",
+  "project_id": "mcp-git-sre",
+  "branch": "main",
+  "failed_job_name": "db_migrations",
+  "error_log_snippet": "FATAL ERROR: Database permission denied. Role 'app_user' has no ALTER privilege on table 'users'.",
+  "error_type": "PERMISSION_DENIED"
+}

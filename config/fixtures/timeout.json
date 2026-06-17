@@ -1,0 +1,8 @@
+{
+  "pipeline_id": "995",
+  "project_id": "mcp-git-sre",
+  "branch": "main",
+  "failed_job_name": "integration_tests",
+  "error_log_snippet": "ERROR: Job failed: execution context exceeded timeout of 20m 0s. Remote runner unresponsive.",
+  "error_type": "TIMEOUT"
+}

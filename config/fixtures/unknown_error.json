@@ -1,0 +1,8 @@
+{
+  "pipeline_id": "996",
+  "project_id": "mcp-git-sre",
+  "branch": "feature/ui",
+  "failed_job_name": "build_assets",
+  "error_log_snippet": "CRITICAL FATAL: Unexpected segmentation fault (core dumped) signal 11. Trace dump unavailable.",
+  "error_type": "UNKNOWN_ERROR"
+}

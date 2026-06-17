@@ -1,0 +1,23 @@
+{
+  "execution_id": 3,
+  "timestamp": "2026-06-11T22:55:45.087382",
+  "execution_mode": "MOCK",
+  "status": "SUCCESS",
+  "test_case": "missing_dependencies",
+  "checks": {
+    "gitlab_connection": false,
+    "mcp_server": true,
+    "gemini_connection": false,
+    "repository_access": false
+  },
+  "pipeline": {
+    "status": "stable",
+    "error": "ModuleNotFoundError"
+  },
+  "resolution": {
+    "decision": "AUTO_FIX",
+    "confidence": 1.0,
+    "mr_created": true
+  },
+  "supervisor_action": "APPROVE_MR"
+}
