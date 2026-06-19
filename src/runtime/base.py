@@ -38,3 +38,5 @@ class BaseRuntime(abc.ABC):
     @abc.abstractmethod
     async def run_validation(self) -> Dict[str, Any]: pass
 
+    @abc.abstractmethod
+    async def get_repository_structure(self) -> List[str]: pass

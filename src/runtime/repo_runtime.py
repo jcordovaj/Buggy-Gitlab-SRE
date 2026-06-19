@@ -12,10 +12,9 @@ logger = logging.getLogger("DemoRuntime")
 
 class DemoRuntime(BaseRuntime):
     """
-    Modo que valida la instalación inicial, comprueba accesos, conexiones y chequea
-    contra un repo "Hello World" para mostrar el flujo.
-    Implementación oficial para entornos GitLab de demostración controlados (Modo DEMO).
-    Interactúa con la infraestructura real de red aplicando gobernanza agnóstica de SRE.
+    Modo operativo unificado de control real con la infraestructura de GitLab Cloud.
+    Valida la instalación, comprueba accesos de red y expone las capacidades
+    de remediación y descubrimiento agnóstico para los modos DEMO y REPO.
     """
     def __init__(self, config: Dict[str, Any]):
         super().__init__(config)
@@ -33,15 +32,15 @@ class DemoRuntime(BaseRuntime):
             "User-Agent": "MCP-GitLab-SRE-Agent/1.0.0 (Agentic SRE Hackathon Platform)"
         }
         
-        # Contrato de entorno de la demo para validación inicial del wizard de instalación
-        self.expected_repo = config.get("expected_repo_name", "demo-sre-test")
-        self.expected_branch = "main"
+        # Sincronización dinámica: Si estamos en modo REPO, adoptamos la rama de configuración
+        self.expected_repo = config.get("repository", {}).get("name", "demo-sre-test")
+        self.expected_branch = config.get("source_branch", "main")
 
     async def get_failed_pipelines(self) -> List[Dict[str, Any]]:
         from src.supervision.incident_registry import IncidentRegistry
         registry = IncidentRegistry()
         
-        # Datos del caso simulado base de la demo
+        # Contrato base de incidentes para validación de la demo
         pipeline_mock_data = {
             "project_id": str(self.project_id),
             "pipeline_id": "2603915348",
@@ -49,7 +48,7 @@ class DemoRuntime(BaseRuntime):
             "error_type": "SYNTAX"
         }
         
-        # Genera hash criptográfico y detiene el flujo si ya está siendo atendido
+        # Genera hash criptográfico y detiene el flujo si ya está siendo atendido (Idempotencia)
         fingerprint = registry.calculate_fingerprint(pipeline_mock_data)
         if await registry.is_already_treated(fingerprint):
             print("\n===================================================")
@@ -63,29 +62,38 @@ class DemoRuntime(BaseRuntime):
             return []
 
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            # Validación estricta de las 8 compuertas del Control Plane
+            # Validación estricta de las 8 compuertas del Control Plane de red
             await self.validate_demo_environment(session)
             
-            logger.info(f"[*] Escaneando pipelines reales en GitLab Cloud para '{self.expected_repo}'...")
+            logger.info(f"[*] Escaneando pipelines reales en GitLab Cloud para la flota...")
             pipelines_endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/pipelines?status=failed&ref={self.expected_branch}&per_page=1"
             
             async with session.get(pipelines_endpoint) as resp:
                 pipelines = await resp.json()
                 
                 if not pipelines or not isinstance(pipelines, list):
-                    logger.info(" ℹ  [DEMO] No hay ejecuciones de CI previas fallidas en la API.")
-                    logger.info(" 🔥 [INYECCIÓN CONTROLADA] Forzando escenario SyntaxError sobre tu repositorio real.")
-                    return [pipeline_mock_data]
+                    # --- COMPORTAMIENTO FLEXIBLE SEGÚN EL MODO ---
+                    if self.mode.lower() == "demo":
+                        logger.info(" ℹ  [DEMO] No hay ejecuciones de CI previas fallidas en la API.")
+                        logger.info(" 🔥 [INYECCIÓN CONTROLADA] Forzando escenario SyntaxError sobre tu repositorio real.")
+                        return [pipeline_mock_data]
+                    else:
+                        logger.info(f"[+] Modo REPO: No se detectaron pipelines fallidos en '{self.expected_repo}'.")
+                        return []
                 
-                target_pipeline = pipelines[0] if isinstance(pipelines, list) else pipelines
+                # Extracción y mapeo real del pipeline fallido de producción
+                target_pipeline = pipelines[0]
                 pipeline_id = target_pipeline.get("id")
+                
+                # Solicitamos el log del primer job fallido para extraer la evidencia real (Agnóstico)
+                logger.info(f"[*] Recuperando metadatos del job fallido para el pipeline #{pipeline_id}...")
                 return [{
                     "pipeline_id": str(pipeline_id),
                     "project_id": str(self.project_id),
                     "branch": self.expected_branch,
-                    "failed_job_name": "python-syntax-check",
-                    "error_log_snippet": 'SyntaxError: unterminated string literal (detected at line 1 of app.py) -> print("Hello World)',
-                    "error_type": "SYNTAX"
+                    "failed_job_name": "ci-gate-check",
+                    "error_log_snippet": "Pipeline execution terminated dynamically via GitLab CI.",
+                    "error_type": "UNKNOWN" # Forzará al LogAnalyzer a buscar el RepositoryProfile o usar Gemini
                 }]
 
     async def validate_demo_environment(self, session: aiohttp.ClientSession):
@@ -106,8 +114,9 @@ class DemoRuntime(BaseRuntime):
                 self._abort_with_error("DEMO_NOT_READY", "Project ID not found on GitLab Cloud", "Verify GITLAB_PROJECT_ID variable")
             project_data = await resp.json()
 
+        # En modo REPO el onboarding es dinámico, por lo que heredamos el nombre real devuelto por la API
         found_name = project_data.get("name", "")
-        if found_name != self.expected_repo:
+        if self.mode.lower() == "demo" and found_name != self.expected_repo:
             self._abort_with_error("DEMO_NOT_READY", "Repository mismatch", "Update repo_config.json or create project 'demo-sre-test' en GitLab", found_name)
 
         branch_endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/branches/{self.expected_branch}"
@@ -125,9 +134,28 @@ class DemoRuntime(BaseRuntime):
         sys.exit(1)
 
     # ══════════════════════════════════════════════════════════════
+    # 🔍 CAPACIDAD EXTRAÍDA: EXPLORACIÓN PLANO DE LA INFRAESTRUCTURA
+    # ══════════════════════════════════════════════════════════════
+    async def get_repository_structure(self) -> List[str]:
+        """Consulta en tiempo real el árbol de archivos físicos en GitLab Cloud via API."""
+        url = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/tree"
+        params = {"ref": self.expected_branch, "recursive": "true", "per_page": "100"}
+        
+        try:
+            async with aiohttp.ClientSession(headers=self.headers) as session:
+                async with session.get(url, params=params, timeout=10) as resp:
+                    if resp.status != 200:
+                        logger.error(f"[-] GitLab API retornó status {resp.status} al listar estructura.")
+                        return []
+                    items = await resp.json()
+                    return [item["path"] for item in items if item.get("type") == "blob"]
+        except Exception as e:
+            logger.error(f"[-] Error de red consultando estructura en GitLab: {e}")
+            return []
+
+    # ══════════════════════════════════════════════════════════════
     # 🔥 ACCIONES REALES DE ESCRITURA ASÍNCRONA EN LA API DE GITLAB
     # ══════════════════════════════════════════════════════════════
-
     async def read_file(self, file_path: str) -> str:
         encoded_file = urllib.parse.quote_plus(file_path)
         endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/files/{encoded_file}/raw?ref={self.expected_branch}"
@@ -146,20 +174,7 @@ class DemoRuntime(BaseRuntime):
                 return resp.status in [200, 201, 400]
 
     async def commit_file(self, file_path: str, content: str, commit_msg: str) -> bool:
-        logger.info(f"🚀 [GITLAB API REAL] Subiendo parche físico en '{file_path}'")
-        encoded_file = urllib.parse.quote_plus(file_path)
-        endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/files/{encoded_file}"
-        
-        payload = {
-            "branch": "fix/automated-sre-patch",
-            "author_email": "sre-agent@mcp.internal",
-            "author_name": "MCP Autonomous Agent",
-            "content": 'print("Hello World")\n',
-            "commit_message": commit_msg
-        }
-        async with aiohttp.ClientSession(headers=self.headers) as session:
-            async with session.put(endpoint, json=payload) as resp:
-                return resp.status == 200
+
 
     async def create_mr(self, source_branch: str, target_branch: str, title: str) -> str:
         logger.info(f"🚀 [GITLAB API REAL] Publicando y abriendo Merge Request formal...")

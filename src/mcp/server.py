@@ -70,3 +70,12 @@ class EmbeddedMCPServer:
             "exit_code": res.get("exit_code", 1),
             "logs": res.get("logs", "Validación ejecutada de forma determinística.")
         })
+        
+    # =========================================================================
+    # 🔍 CAPACIDAD MINIMALISTA DE AUTO-ONBOARDING MODO REPO
+    # =========================================================================
+    async def _get_repository_structure(self, params: Dict[str, Any]) -> ToolResponse:
+        """Retorna un listado plano de archivos del árbol raíz del repositorio."""
+        files = await self.runtime.get_repository_structure()
+        return ToolResponse(success=True, data={"files": files, "count": len(files)})
+    
