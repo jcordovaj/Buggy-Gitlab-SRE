@@ -10,6 +10,7 @@ from src.runtime.base import BaseRuntime
 
 logger = logging.getLogger("DemoRuntime")
 
+
 class DemoRuntime(BaseRuntime):
     """
     Modo operativo unificado de control real con la infraestructura de GitLab Cloud.
@@ -32,7 +33,7 @@ class DemoRuntime(BaseRuntime):
             "User-Agent": "MCP-GitLab-SRE-Agent/1.0.0 (Agentic SRE Hackathon Platform)"
         }
         
-        # Sincronización dinámica: Si estamos en modo REPO, adoptamos la rama de configuración
+        # Sincronización dinámica: Si estamos en modo REPO, adoptamos la configuración del proyecto
         self.expected_repo = config.get("repository", {}).get("name", "demo-sre-test")
         self.expected_branch = config.get("source_branch", "main")
 
@@ -85,7 +86,6 @@ class DemoRuntime(BaseRuntime):
                 target_pipeline = pipelines[0]
                 pipeline_id = target_pipeline.get("id")
                 
-                # Solicitamos el log del primer job fallido para extraer la evidencia real (Agnóstico)
                 logger.info(f"[*] Recuperando metadatos del job fallido para el pipeline #{pipeline_id}...")
                 return [{
                     "pipeline_id": str(pipeline_id),
@@ -93,11 +93,11 @@ class DemoRuntime(BaseRuntime):
                     "branch": self.expected_branch,
                     "failed_job_name": "ci-gate-check",
                     "error_log_snippet": "Pipeline execution terminated dynamically via GitLab CI.",
-                    "error_type": "UNKNOWN" # Forzará al LogAnalyzer a buscar el RepositoryProfile o usar Gemini
+                    "error_type": "UNKNOWN"  # Forzará al LogAnalyzer a enriquecerse con el RepositoryProfile
                 }]
 
     async def validate_demo_environment(self, session: aiohttp.ClientSession):
-        """Gobernanza SRE: Cortocircuito estricto de instalación en red."""
+        """Gobernanza SRE: Cortocorticuto estricto de instalación en red."""
         token_endpoint = f"{self.api_url}/api/v4/personal_access_tokens/self"
         try:
             async with session.get(token_endpoint) as resp:
@@ -114,7 +114,6 @@ class DemoRuntime(BaseRuntime):
                 self._abort_with_error("DEMO_NOT_READY", "Project ID not found on GitLab Cloud", "Verify GITLAB_PROJECT_ID variable")
             project_data = await resp.json()
 
-        # En modo REPO el onboarding es dinámico, por lo que heredamos el nombre real devuelto por la API
         found_name = project_data.get("name", "")
         if self.mode.lower() == "demo" and found_name != self.expected_repo:
             self._abort_with_error("DEMO_NOT_READY", "Repository mismatch", "Update repo_config.json or create project 'demo-sre-test' en GitLab", found_name)
@@ -134,7 +133,7 @@ class DemoRuntime(BaseRuntime):
         sys.exit(1)
 
     # ══════════════════════════════════════════════════════════════
-    # 🔍 CAPACIDAD EXTRAÍDA: EXPLORACIÓN PLANO DE LA INFRAESTRUCTURA
+    # 🔍 INTERROGACIÓN ASÍNCRONA NATIVA DE INFRAESTRUCTURA (100% AGNÓSTICA)
     # ══════════════════════════════════════════════════════════════
     async def get_repository_structure(self) -> List[str]:
         """Consulta en tiempo real el árbol de archivos físicos en GitLab Cloud via API."""
@@ -153,9 +152,6 @@ class DemoRuntime(BaseRuntime):
             logger.error(f"[-] Error de red consultando estructura en GitLab: {e}")
             return []
 
-    # ══════════════════════════════════════════════════════════════
-    # 🔥 ACCIONES REALES DE ESCRITURA ASÍNCRONA EN LA API DE GITLAB
-    # ══════════════════════════════════════════════════════════════
     async def read_file(self, file_path: str) -> str:
         encoded_file = urllib.parse.quote_plus(file_path)
         endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/files/{encoded_file}/raw?ref={self.expected_branch}"
@@ -174,7 +170,17 @@ class DemoRuntime(BaseRuntime):
                 return resp.status in [200, 201, 400]
 
     async def commit_file(self, file_path: str, content: str, commit_msg: str) -> bool:
-
+        logger.info(f"🚀 [GITLAB API REAL] Subiendo parche físico en '{file_path}'")
+        encoded_file = urllib.parse.quote_plus(file_path)
+        endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/repository/files/{encoded_file}"
+        payload = {
+            "branch": "fix/automated-sre-patch",
+            "commit_message": commit_msg,
+            "actions": [{"action": "update", "file_path": file_path, "content": content}]
+        }
+        async with aiohttp.ClientSession(headers=self.headers) as session:
+            async with session.post(endpoint, json=payload) as resp:
+                return resp.status in [200, 201]
 
     async def create_mr(self, source_branch: str, target_branch: str, title: str) -> str:
         logger.info(f"🚀 [GITLAB API REAL] Publicando y abriendo Merge Request formal...")
@@ -191,13 +197,9 @@ class DemoRuntime(BaseRuntime):
                 if resp.status == 201:
                     return data.get("web_url")
                 elif resp.status == 409:
-                    # [CORREGIDO] URL 100% dinámica basada en las variables del entorno del usuario
                     return f"{self.api_url}/{self.raw_id}/-/merge_requests"
                 return f"{self.api_url}/{self.raw_id}/-/merge_requests/1"
-                                        
-    # ══════════════════════════════════════════════════════════════
-    # 🔍 INTERROGACIÓN ASÍNCRONA NATIVA DE INFRAESTRUCTURA (100% AGNÓSTICA)
-    # ══════════════════════════════════════════════════════════════
+
     async def run_validation(self) -> Dict[str, Any]:
         """
         [CONTRATO SRE REAL] 100% Agnóstico a Lenguajes.
@@ -205,9 +207,7 @@ class DemoRuntime(BaseRuntime):
         """
         logger.info("[*] ValidatorAgent: Iniciando monitoreo en caliente (Polling) del pipeline de validación real en GitLab Cloud...")
         endpoint = f"{self.api_url}/api/v4/projects/{self.project_id}/pipelines?ref=fix/automated-sre-patch&per_page=1"
-        
         async with aiohttp.ClientSession(headers=self.headers) as session:
-            # 3 intentos espaciados por 4 segundos para validar el cambio de estado en la nube de forma agnóstica
             for intento in range(3):
                 await asyncio.sleep(4)
                 try:
@@ -215,14 +215,10 @@ class DemoRuntime(BaseRuntime):
                         if resp.status == 200:
                             pipelines = await resp.json()
                             if pipelines and isinstance(pipelines, list):
-                                # [CORREGIDO] Desempaquetado seguro sin caracteres colgados de sintaxis
                                 target = pipelines[0]
                                 status = target.get("status", "pending")
                                 pipeline_id = target.get("id")
-                                
                                 logger.info(f"[*] Monitoreo real GitLab -> Pipeline #{pipeline_id} | Estado: '{status.upper()}'")
-                                
-                                # Si GitLab aprobó o está corriendo el pipeline, el agente valida con éxito delegando en la infra
                                 if status in ["success", "running", "pending"]:
                                     return {"passed": True, "exit_code": 0, "logs": f"Pipeline #{pipeline_id} verificado con estado: {status}."}
                                 elif status in ["failed", "canceled"]:
@@ -231,11 +227,9 @@ class DemoRuntime(BaseRuntime):
                             logger.warning(f"[-] Código inesperado al consultar validación de pipeline: {resp.status}")
                 except Exception as e:
                     logger.debug(f"Loop de polling de red amortiguado: {e}")
-            
-            # Fallback si el Runner está encolado o tarda en aprovisionar el contenedor
             return {"passed": True, "exit_code": 0, "logs": "Validación de infraestructura delegada con éxito."}
-        
-# Sólo se conserva la firma de producción legítima al final
+
+
 class RepoRuntime(BaseRuntime):
     """Implementación oficial para repositorios reales de usuario en producción."""
     pass
