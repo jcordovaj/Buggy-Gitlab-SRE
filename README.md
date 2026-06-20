@@ -118,3 +118,300 @@ El Comportamiento que deberías ver: El asistente DemoRuntime abrirá el canal T
 Síntesis, crea el archivo en la interfaz de GitLab, actualiza el ID en tu entorno y ejecútalo el comando con el modificador '--demo'.
 
 En progreso...modo 'REPO' que es el SRE agnóstico para resolver problemas de flujos CI/CD en forma automática con supervisión HITL para revisar los pipelines corregidos y aprobar, rechazar o completar otras tareas que falten (por ejemplo, actualizar una versión incompatible)
+
+## PRUEBA REPO NODE EN GITLAB
+
+### Paso 1 — Crear nuevo proyecto en GitLab
+
+1.1 Crear proyecto:
+
+Name: demo-node-sre
+Namespace: demo-sre-test-group
+
+Visibility: Private
+
+Initialize repository:
+NO README
+NO .gitignore
+NO LICENSE
+
+Motivo: No queremos que GitLab agregue archivos que puedan contaminar el Discovery.
+
+El repo debe iniciar vacío.
+
+Resultado esperado:
+namespace: Nombre del grupo en el que se creo el proyecto
+
+    https://gitlab.com/<namespace>/demo-node-sre
+
+### Paso 2 — Clonar localmente en una carpeta separada
+
+cd C:\Repos\tracked
+
+git clone https://gitlab.com/<namespace>/demo-node-sre.git
+
+cd demo-node-sre
+
+Validación: git status
+
+Debe decir:
+On branch main
+No commits yet
+
+### Paso 3 — Crear estructura del proyecto
+
+La estructura será deliberadamente estándar:
+
+```bash
+demo-node-sre/
+    ├── package.json
+    ├── tsconfig.json
+    ├── .gitlab-ci.yml
+    │
+    └── src/
+       └── server.ts
+```
+
+Nada más.
+
+La razón: Discovery debe demostrar que puede inferir
+
+* Evidencia Inferencia
+* package.json Node ecosystem
+* tsconfig.json TypeScript
+* src/*.ts lenguaje
+* scripts build/test
+
+### Paso 4 — Crear package.json
+
+Contenido:
+
+```json
+{
+  "name": "demo-node-sre",
+  "version": "1.0.0",
+  "description": "Repository for MCP-GitLab-SRE REPO validation",
+  "main": "dist/server.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/server.js",
+    "test": "jest"
+  },
+  "dependencies": {
+    "express": "^4.18.3"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "@types/express": "^4.17.0"
+  }
+}
+```
+
+Discovery esperado:
+
+```text
+language=node/typescript
+build_system=npm
+framework=express
+test_runner=jest
+confidence >= 0.95
+```
+
+### Paso 5 — Crear tsconfig.json
+
+Contenido:
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "rootDir": "src",
+    "outDir": "dist",
+    "strict": true
+  }
+}
+```
+
+Evidencia:
+
+```text
+tsconfig.json encontrado
+```
+
+Sube el score.
+
+### Paso 6 — Crear la falla intencional
+
+Archivo:
+
+```bash
+src/server.ts
+```
+
+Contenido:
+
+```typescript
+import express from "express";
+const app = express();
+const DATABASE_PASSWORD = "prod_password=SuperSecret123";
+app.get("/", (_, res) => {
+    res.json({
+        status:"running",
+        service:"demo-node-sre"
+    });
+});
+app.listen(3000);
+```
+
+Esta falla NO es de sintaxis, es importante porque se quiere romper la hipótesis: "todo error se arregla con regex".
+
+Aquí debe ocurrir:
+
+LogAnalyzer
+      |
+      |
+UNKNOWN_PATTERN
+      |
+      v
+  TriageAgent
+      |
+      |
+    Gemini
+      |
+      |
+Remediation Plan
+
+### Paso 7 — Crear pipeline GitLab
+
+Archivo:
+
+```bash
+  .gitlab-ci.yml
+  ```
+
+Contenido:
+
+```bash
+stages:
+  - test
+
+node_validation:
+
+  image:
+    node:20
+
+  stage: 
+    test
+
+  script:
+    npm install
+    npm run build
+   ```
+
+Objetivo: Generar pipeline real. No buscamos que falle por build.
+
+Buscamos que el agente vea:
+
+* pipeline exists
+* job exists
+* logs available
+
+### Paso 8 — Commit inicial
+
+```bash
+git add .
+git commit -m "Initial Node TypeScript SRE demo"
+git push origin main
+```
+
+### Paso 9 — Verificación manual GitLab
+
+Antes de lanzar SRE:
+
+En GitLab:
+
+Pipelines:
+
+Debe existir:
+
+```bash
+node_validation
+```
+
+Estado:
+
+**_passed_**
+
+o
+
+**_failed_**
+
+ambos sirven.
+
+Lo importante:
+
+Existe un objeto GitLab CI real.
+
+### Paso 10 — Forzar incidente SRE para provocar el caso
+
+Modificar:
+
+```js
+const DATABASE_PASSWORD = "prod_password=SuperSecret123";
+```
+
+Agregar:
+
+```js
+const AWS_SECRET = "AKIA_TEST_SECRET_EXPOSED";
+```
+
+Commit:
+
+```bash
+git add .
+git commit -m "Introduce credential leak test"
+git push
+```
+
+Ahora GitLab tendrá:
+
+```text
+ Pipeline N
+     |
+     v
+ job node_validation
+     |
+     v
+    logs
+```
+
+### Paso 11 — Ejecutar MCP-GitLab-SRE
+
+Desde:
+
+Buggy-Gitlab-SRE
+
+configurar:
+
+```js
+.env
+```
+
+Debe apuntar al nuevo repo:
+
+Ejemplo conceptual:
+
+```bash
+GITLAB_PROJECT_ID=<demo-node-sre>
+GITLAB_TOKEN=<token>
+GITLAB_URL=https://gitlab.com
+```
+
+Luego:
+
+```python
+python run_agent.py --mode repo
+```

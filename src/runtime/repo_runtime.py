@@ -229,7 +229,6 @@ class DemoRuntime(BaseRuntime):
                     logger.debug(f"Loop de polling de red amortiguado: {e}")
             return {"passed": True, "exit_code": 0, "logs": "Validación de infraestructura delegada con éxito."}
 
-
 class RepoRuntime(BaseRuntime):
     """Implementación oficial para repositorios reales de usuario en producción."""
     pass
