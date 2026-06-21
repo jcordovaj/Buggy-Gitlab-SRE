@@ -131,32 +131,49 @@ Namespace: demo-sre-test-group
 Visibility: Private
 
 Initialize repository:
+
+```text
 NO README
 NO .gitignore
 NO LICENSE
+```
 
 Motivo: No queremos que GitLab agregue archivos que puedan contaminar el Discovery.
 
 El repo debe iniciar vacío.
 
-Resultado esperado:
-namespace: Nombre del grupo en el que se creo el proyecto
+namespace:
 
+```text
+Nombre del grupo en el que se creo el proyecto
+```
+
+Resultado esperado:
+
+```bash
     https://gitlab.com/<namespace>/demo-node-sre
+```
 
 ### Paso 2 — Clonar localmente en una carpeta separada
 
+```bash
 cd C:\Repos\tracked
-
 git clone https://gitlab.com/<namespace>/demo-node-sre.git
-
 cd demo-node-sre
+```
 
-Validación: git status
+Validación:
+
+```bash
+git status
+```
 
 Debe decir:
+
+```text
 On branch main
 No commits yet
+```
 
 ### Paso 3 — Crear estructura del proyecto
 
