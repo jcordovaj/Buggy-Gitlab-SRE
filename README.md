@@ -1,4 +1,4 @@
-# Buggy una solución agéntica para SRE autómático
+# (Documento en desarrollo) Buggy una solución agéntica para SRE autómático
 
 ## 🚀 Guía de Primera Instalación y Configuración (Modo DEMO)
 
