@@ -13,7 +13,7 @@ logging.basicConfig(
 logger = logging.getLogger("Launcher")
 
 def load_env_file(filepath: str = ".env"):
-    """Parser nativo industrial para cargar el .env en la memoria de Windows sin librerías."""
+    """Parser nativo para cargar el .env en la memoria de Windows sin librerías."""
     if not os.path.exists(filepath):
         logger.warning(f"[-] Archivo de secretos {filepath} no detectado físicamente.")
         return
@@ -35,7 +35,7 @@ def load_env_file(filepath: str = ".env"):
         logger.error(f"[-] Error parseando el archivo .env de forma nativa: {e}")
 
 async def main():
-    parser = argparse.ArgumentParser(description="MCP-GitLab-SRE: Agente autónomo de SRE con protocolo MCP")
+    parser = argparse.ArgumentParser(description="BUGGY MCP-GitLab-SRE: Buggy es un agente autónomo de SRE con protocolo MCP conectado a Gitlab")
     parser.add_argument("--mode", type=str, choices=["mock", "demo", "repo"], default="mock", help="Modo operativo del sistema")
     parser.add_argument(
         "--test-case", 
@@ -44,7 +44,7 @@ async def main():
         default="syntax_error", 
         help="Caso de prueba para inyección local"
     )
-    parser.add_argument("--verbose", "-v", action="store_true", help="Aumenta la verbosidad de salida de logs a nivel DEBUG")
+    parser.add_argument("--verbose", "-v", action="store_true", help="Aumenta la mensajería de salida de logs a nivel DEBUG")
     args = parser.parse_args()
 
     if args.verbose:
