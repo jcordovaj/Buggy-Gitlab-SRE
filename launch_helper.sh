@@ -1,11 +1,11 @@
 #!/bin/bash
 # ══════════════════════════════════════════════════════════════
-# 🚀 LAUNCH HELPER GATEWAY - MCP-GitLab-SRE
+# 🚀 LAUNCH HELPER GATEWAY - BUGGY - MCP-GitLab-SRE
 # ══════════════════════════════════════════════════════════════
 
 clear
 echo "============================================================="
-echo "⚙️  INICIALIZANDO PLATAFORMA AUTÓNOMA SRE"
+echo "⚙️  INICIALIZANDO PLATAFORMA AUTÓNOMA BUGGY SRE"
 echo "============================================================="
 
 # 1. VALIDACIÓN DE ENTORNO (.env)
@@ -15,10 +15,10 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# 2. SELECCIÓN DE MODOS INTERACTIVOS (Uso Profesional CLI)
+# 2. SELECCIÓN DE MODOS INTERACTIVOS ( Buggy CLI)
 echo -e "\n--- Modos de Operación Disponibles ---"
-echo "1) MOCK (Desarrollo Local con tus archivos de log reales)"
-echo "2) DEMO (Pre-flight Checklist / Sanity Check Integraciones)"
+echo "1) MOCK (Pruebas locales con archivos de log)"
+echo "2) DEMO (Pre-flight Checklist "Hello World" / Sanity Check Integraciones)"
 echo "3) REPO (Ejecución Autónoma en Producción)"
 read -p "Seleccione una opción operativa [1-3]: " opt
 
